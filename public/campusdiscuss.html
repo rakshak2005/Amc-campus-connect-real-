@@ -1,0 +1,147 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Campus Discussion Forum</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
+    <style>
+        body {
+            font-family: 'Inter', sans-serif;
+        }
+        #messages-container::-webkit-scrollbar {
+            width: 6px;
+        }
+        #messages-container::-webkit-scrollbar-track {
+            background: #f1f5f9;
+        }
+        #messages-container::-webkit-scrollbar-thumb {
+            background: #cbd5e1;
+            border-radius: 3px;
+        }
+        #messages-container::-webkit-scrollbar-thumb:hover {
+            background: #94a3b8;
+        }
+        .dark #messages-container::-webkit-scrollbar-track {
+            background: #1e293b;
+        }
+        .dark #messages-container::-webkit-scrollbar-thumb {
+            background: #475569;
+        }
+        .dark #messages-container::-webkit-scrollbar-thumb:hover {
+            background: #64748b;
+        }
+    </style>
+</head>
+<body class="bg-#0B0E1A flex items-center justify-center min-h-screen p-4">
+
+    <div class="flex flex-col w-full max-w-2xl h-[90vh] bg-white dark:bg-slate-800 rounded-2xl shadow-2xl border dark:border-slate-700">
+        
+        <div class="p-4 border-b dark:border-slate-700 flex-shrink-0">
+            <h2 class="text-xl font-bold text-center text-gray-800 dark:text-white">#general-discussion</h2>
+            <p class="text-sm text-center text-gray-500 dark:text-gray-400">Talk about anything campus-related!</p>
+        </div>
+        
+        <div id="messages-container" class="flex-1 p-4 overflow-y-auto space-y-4">
+        </div>
+
+        <div class="p-4 bg-gray-50 dark:bg-slate-700/50 border-t dark:border-slate-700 flex-shrink-0">
+            <form id="chat-form" class="flex items-center space-x-3">
+                <input type="text" id="message-input" placeholder="Type your message..." autocomplete="off" required class="flex-1 w-full px-4 py-2 bg-white dark:bg-slate-800 border dark:border-slate-600 rounded-full focus:outline-none focus:ring-2 focus:ring-indigo-500">
+                <button type="submit" class="p-3 bg-indigo-600 text-white rounded-full hover:bg-indigo-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-indigo-500 dark:focus:ring-offset-slate-800">
+                    <svg xmlns="http://www.w3.org/2000/svg" class="h-6 w-6" viewBox="0 0 20 20" fill="currentColor">
+                        <path d="M10.894 2.553a1 1 0 00-1.788 0l-7 14a1 1 0 001.169 1.409l5-1.429A1 1 0 009 15.571V11a1 1 0 112 0v4.571a1 1 0 00.725.962l5 1.428a1 1 0 001.17-1.408l-7-14z" />
+                    </svg>
+                </button>
+            </form>
+        </div>
+    </div>
+
+    <script>
+        const currentUser = { id: 'user_123', name: 'You', avatar: 'https://placehold.co/40x40/6366f1/ffffff?text=ME' };
+        
+        let messagesData = [
+            { id: 1, sender: { name: 'Priya S.', avatar: 'https://placehold.co/40x40/ec4899/ffffff?text=PS' }, text: 'Hey everyone! Does anyone know when the library will be open during the fest?', timestamp: new Date('2025-10-16T20:35:00') },
+            { id: 2, sender: { name: 'Rahul V.', avatar: 'https://placehold.co/40x40/f97316/ffffff?text=RV' }, text: 'I heard it\'s closing early, around 4 PM. Best to check the official notice board though.', timestamp: new Date('2025-10-16T20:36:10') },
+            { id: 3, sender: { name: 'Anjali K.', avatar: 'https://placehold.co/40x40/14b8a6/ffffff?text=AK' }, text: 'Also, is anyone selling their old physics textbook? DM me if you are!', timestamp: new Date('2025-10-16T20:40:25') },
+        ];
+
+        const messagesContainer = document.getElementById('messages-container');
+        const chatForm = document.getElementById('chat-form');
+        const messageInput = document.getElementById('message-input');
+
+        function formatTimestamp(date) {
+            return date.toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' });
+        }
+
+        function createMessageElement(message) {
+            const isCurrentUser = message.sender.id === currentUser.id;
+
+            const messageWrapper = document.createElement('div');
+            messageWrapper.className = `flex items-start gap-3 ${isCurrentUser ? 'flex-row-reverse' : ''}`;
+            
+            const avatarImg = document.createElement('img');
+            avatarImg.src = message.sender.avatar;
+            avatarImg.alt = message.sender.name;
+            avatarImg.className = 'w-10 h-10 rounded-full';
+
+            const messageBubble = document.createElement('div');
+            messageBubble.className = `flex flex-col ${isCurrentUser ? 'items-end' : 'items-start'}`;
+
+            const senderName = document.createElement('p');
+            senderName.className = 'text-sm font-semibold text-gray-700 dark:text-gray-300';
+            senderName.textContent = message.sender.name;
+            
+            const textBubble = document.createElement('div');
+            textBubble.className = `mt-1 max-w-xs md:max-w-md px-4 py-2 rounded-2xl ${isCurrentUser ? 'bg-indigo-600 text-white rounded-br-none' : 'bg-gray-200 dark:bg-slate-700 text-gray-800 dark:text-white rounded-bl-none'}`;
+            textBubble.textContent = message.text;
+            
+            const timeStamp = document.createElement('p');
+            timeStamp.className = 'mt-1 text-xs text-gray-400';
+            timeStamp.textContent = formatTimestamp(message.timestamp);
+
+            messageBubble.appendChild(senderName);
+            messageBubble.appendChild(textBubble);
+            messageBubble.appendChild(timeStamp);
+            
+            messageWrapper.appendChild(avatarImg);
+            messageWrapper.appendChild(messageBubble);
+            
+            return messageWrapper;
+        }
+
+        function renderMessages() {
+            messagesContainer.innerHTML = '';
+            messagesData.forEach(message => {
+                const messageEl = createMessageElement(message);
+                messagesContainer.appendChild(messageEl);
+            });
+            messagesContainer.scrollTop = messagesContainer.scrollHeight;
+        }
+
+        function handleSendMessage(e) {
+            e.preventDefault();
+            const messageText = messageInput.value.trim();
+
+            if (messageText) {
+                const newMessage = {
+                    id: messagesData.length + 1,
+                    sender: currentUser,
+                    text: messageText,
+                    timestamp: new Date()
+                };
+                messagesData.push(newMessage);
+                renderMessages();
+                messageInput.value = '';
+            }
+        }
+
+        chatForm.addEventListener('submit', handleSendMessage);
+        
+        document.addEventListener('DOMContentLoaded', renderMessages);
+    </script>
+</body>
+</html>

@@ -1,26 +1,271 @@
 @import "tailwindcss";
 
-:root {
-  --background: #ffffff;
-  --foreground: #171717;
-}
-
-@theme inline {
-  --color-background: var(--background);
-  --color-foreground: var(--foreground);
-  --font-sans: var(--font-geist-sans);
-  --font-mono: var(--font-geist-mono);
-}
-
-@media (prefers-color-scheme: dark) {
-  :root {
-    --background: #0a0a0a;
-    --foreground: #ededed;
-  }
+/* Base Reset */
+* {
+  box-sizing: border-box;
+  background-color: #0b0e1a;
 }
 
 body {
-  background: var(--background);
-  color: var(--foreground);
-  font-family: Arial, Helvetica, sans-serif;
+  margin: 0;
+  font-family: "Unbounded", sans-serif;
+  background-color: #0b0e1a;
+  color: #fff;
+  line-height: 1.6;
+  overflow-x: hidden;
+}
+
+/* Typography Defaults */
+h1,
+h2,
+h3,
+p,
+span,
+a,
+b {
+  background-color: transparent;
+}
+
+/* --- Header & Navbar --- */
+header {
+  background: #0b0e1a;
+  position: fixed;
+  width: 100%;
+  top: 0;
+  z-index: 1000;
+  padding: 1rem 0; /* Add vertical padding */
+}
+
+.navbar {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  padding: 0 5%; /* Horizontal padding */
+  width: 100%;
+}
+
+.logo {
+  font-size: 1.5rem;
+  font-weight: bold;
+  color: #00bfff;
+  flex-shrink: 0; /* Prevent logo from shrinking */
+}
+
+/* Navigation Links */
+.nav-links {
+  list-style: none;
+  display: flex;
+  gap: 2vw; /* Use vw for dynamic gap */
+  padding: 0;
+  margin: 0;
+}
+
+.nav-links li a {
+  text-decoration: none;
+  color: #fff;
+  font-size: 1rem;
+  white-space: nowrap; /* Stop links from breaking lines */
+}
+
+.nav-buttons {
+  display: flex;
+  gap: 10px;
+}
+
+/* --- Buttons --- */
+.btn-outline,
+.btn-primary {
+  padding: 0.6rem 1.2rem;
+  border-radius: 50px;
+  border: none;
+  cursor: pointer;
+  font-size: 0.9rem;
+  font-weight: 600;
+  text-align: center;
+  text-decoration: none;
+  display: inline-block;
+}
+
+.btn-outline {
+  background: transparent;
+  border: 1px solid #00bfff;
+  color: #00bfff;
+}
+
+.btn-primary {
+  background: #00bfff;
+  color: #fff;
+}
+
+/* --- Hero Section --- */
+.hero {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  padding: 120px 5% 50px; /* Top padding clears fixed nav */
+  min-height: 95vh;
+}
+
+.hero-text {
+  flex: 1;
+  max-width: 600px;
+  margin-right: 2rem;
+}
+
+.hero-text h1 {
+  font-size: clamp(2.5rem, 5vw, 4rem); /* Responsive font size */
+  margin: 10px 0;
+  line-height: 1.2;
+}
+
+.hero-text h1 span {
+  color: #00bfff;
+}
+
+.tagline {
+  color: #00bfff;
+  font-size: 1.1rem;
+  margin-bottom: 0.5rem;
+}
+
+.hero-image {
+  flex: 1;
+  display: flex;
+  justify-content: flex-end; /* Pushes image to right */
+}
+
+.hero-image img {
+  width: 100%;
+  max-width: 450px; /* Stops image from getting huge */
+  height: auto;
+  border-radius: 50%;
+  background: #1c1f2e;
+  padding: 20px;
+}
+
+/* --- Other Sections --- */
+.banner {
+  background: #2c2c2c;
+  text-align: center;
+  padding: 3rem 1rem;
+}
+
+.banner * {
+  background-color: #2c2c2c;
+}
+
+.banner h2 {
+  font-size: clamp(2rem, 6vw, 5rem);
+  color: #fff;
+}
+
+.features,
+.chat-examples,
+.trial {
+  text-align: center;
+  padding: 4rem 5%;
+}
+
+.features p {
+  max-width: 800px;
+  margin: 0 auto;
+}
+
+.examples {
+  display: flex;
+  justify-content: center;
+  gap: 1.5rem;
+  margin-top: 2rem;
+  flex-wrap: wrap;
+}
+
+.chat-box {
+  background: #2c2c2c;
+  padding: 1.5rem;
+  border-radius: 1rem;
+  width: 300px;
+  font-size: 1rem;
+}
+
+.chat-box.highlight {
+  background: #00bfff;
+  color: #000;
+}
+.chat-box * {
+  background-color: inherit;
+}
+
+/* --- Footer --- */
+footer {
+  background: #fff;
+  padding: 3rem 5%;
+  display: flex;
+  flex-wrap: wrap;
+  gap: 2rem;
+}
+
+footer * {
+  background-color: #fff;
+  color: #000;
+}
+
+.footer-left,
+.footer-right {
+  flex: 1 1 300px; /* Flex-grow, Flex-shrink, Min-width */
+}
+
+.copyright {
+  text-align: center;
+  padding: 1rem;
+  background-color: #0b0e1a;
+  color: #fff;
+}
+
+/* =========================================
+   MEDIA QUERIES (The Fixes)
+   ========================================= */
+
+/* Tablet & Smaller Laptops (max-width: 1024px) */
+@media (max-width: 1024px) {
+  .nav-links {
+    display: none; /* Hide standard nav links on tablet/mobile */
+  }
+
+  /* You could add a hamburger menu here, but for now let's just keep the buttons */
+
+  .hero {
+    flex-direction: column-reverse; /* Stack items vertically */
+    text-align: center;
+    justify-content: center;
+    padding-top: 140px;
+  }
+
+  .hero-text {
+    margin-right: 0;
+    margin-top: 2rem;
+    max-width: 100%;
+  }
+
+  .hero-image {
+    justify-content: center;
+    margin-bottom: 1rem;
+  }
+}
+
+/* Mobile Phones (max-width: 768px) */
+@media (max-width: 768px) {
+  .navbar {
+    flex-direction: column;
+    gap: 1rem;
+  }
+
+  .btn-primary,
+  .btn-outline {
+    padding: 0.5rem 1rem;
+    font-size: 0.8rem;
+  }
+
+  .banner h2 {
+    font-size: 2.5rem;
+  }
 }

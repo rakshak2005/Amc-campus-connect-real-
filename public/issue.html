@@ -1,0 +1,231 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Campus Fix-It: Report an Issue</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <script src="https://cdn.jsdelivr.net/npm/@tensorflow/tfjs@latest/dist/tf.min.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/@tensorflow-models/mobilenet@latest/dist/mobilenet.min.js"></script>
+    <style>
+        .loader {
+            border: 4px solid #f3f3f3;
+            border-top: 4px solid #3498db;
+            border-radius: 50%;
+            width: 40px;
+            height: 40px;
+            animation: spin 1s linear infinite;
+        }
+        @keyframes spin {
+            0% { transform: rotate(0deg); }
+            100% { transform: rotate(360deg); }
+        }
+    </style>
+</head>
+<body class="bg-#0B0E1A font-sans p-6 md:p-12">
+
+    <div class="max-w-2xl mx-auto bg-slate-800 rounded-xl shadow-lg p-8">
+        
+        <h2 class="text-3xl font-bold text-center text-white mb-6">
+            Campus Fix-It
+        </h2>
+        <p class="text-center text-white mb-8">
+            See a problem? Snap a photo and let us know. Our AI will help categorize the issue.
+        </p>
+
+        <div id="uploadSection" class="mb-6">
+            <label for="imageUpload" class="relative flex flex-col items-center justify-center w-full h-48 border-2 border-blue-400 border-dashed rounded-lg cursor-pointer bg-blue-50 hover:bg-blue-100 transition">
+                <div class="flex flex-col items-center justify-center pt-5 pb-6">
+                    <svg class="w-10 h-10 mb-3 text-blue-600" fill="none" stroke="currentColor" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M3 9a2 2 0 012-2h.93a2 2 0 001.664-.89l.812-1.22A2 2 0 0110.07 4h3.86a2 2 0 011.664.89l.812 1.22A2 2 0 0018.07 7H19a2 2 0 012 2v9a2 2 0 01-2 2H5a2 2 0 01-2-2V9z"></path><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 13a3 3 0 11-6 0 3 3 0 016 0z"></path></svg>
+                    <p class="mb-2 text-sm text-blue-700"><span class="font-semibold">Click to upload</span> or take a picture</p>
+                    <p class="text-xs text-gray-500">PNG, JPG, or JPEG</p>
+                </div>
+                <input id="imageUpload" type="file" class="hidden" accept="image/*" capture="environment" />
+            </label>
+        </div> 
+
+        <div id="analysisSection" class="hidden">
+            <img id="imagePreview" src="#" alt="Image Preview" class="w-full h-auto rounded-lg mb-4 border border-gray-200" />
+
+            <div id="loader" class="flex flex-col items-center justify-center my-4 hidden">
+                <div class="loader"></div>
+                <p class="text-blue-600 mt-2">Analyzing image...</p>
+            </div>
+
+            <h3 id="categoryResult" class="text-xl font-semibold text-center text-gray-800 my-4 hidden">
+                Detected Category: <span id="categoryLabel" class="text-blue-600">...</span>
+            </h3>
+        </div>
+
+        <div id="detailsSection" class="hidden">
+            <div class="my-4">
+                <button id="locationBtn" class="w-full bg-gray-200 text-gray-800 font-bold py-3 px-4 rounded-lg hover:bg-gray-300 transition-colors flex items-center justify-center">
+                    <svg class="w-5 h-5 mr-2" fill="currentColor" viewBox="0 0 20 20" xmlns="http://www.w3.org/2000/svg"><path fill-rule="evenodd" d="M5.05 4.05a7 7 0 119.9 9.9L10 18.9l-4.95-4.95a7 7 0 010-9.9zM10 11a2 2 0 100-4 2 2 0 000 4z" clip-rule="evenodd"></path></svg>
+                    Get My Current Location
+                </button>
+                <p id="locationText" class="text-sm text-gray-600 text-center mt-2">Please share your location for the report.</p>
+            </div>
+
+            <div class="my-4">
+                <label for="description" class="block text-sm font-medium text-gray-700 mb-1">Add details (optional):</label>
+                <textarea id="description" rows="3" class="w-full p-2 border border-gray-300 rounded-lg focus:ring-blue-500 focus:border-blue-500" placeholder="e.g., 'The chair in room 302 is broken.'"></textarea>
+            </div>
+
+            <button id="submitBtn" class="w-full bg-blue-600 text-white font-bold py-3 px-4 rounded-lg hover:bg-blue-700 transition-colors">
+                Submit Report
+            </button>
+        </div>
+
+        <div id="successMessage" class="hidden mt-6 bg-green-100 border border-green-400 text-green-800 px-4 py-3 rounded-lg relative" role="alert">
+            <strong class="font-bold">Success!</strong>
+            <span class="block sm:inline">Your report has been submitted to the administration.</span>
+        </div>
+    </div>
+
+    <script>
+        const imageUpload = document.getElementById('imageUpload');
+        const imagePreview = document.getElementById('imagePreview');
+        const analysisSection = document.getElementById('analysisSection');
+        const loader = document.getElementById('loader');
+        const categoryResult = document.getElementById('categoryResult');
+        const categoryLabel = document.getElementById('categoryLabel');
+        const detailsSection = document.getElementById('detailsSection');
+        const locationBtn = document.getElementById('locationBtn');
+        const locationText = document.getElementById('locationText');
+        const submitBtn = document.getElementById('submitBtn');
+        const successMessage = document.getElementById('successMessage');
+        const uploadSection = document.getElementById('uploadSection');
+
+        let model;
+        let reportData = {
+            image: null,
+            category: null,
+            location: null,
+            description: null
+        };
+
+        async function loadModel() {
+            console.log("Loading MobileNet model...");
+            try {
+                model = await mobilenet.load();
+                console.log("Model loaded successfully.");
+            } catch (err) {
+                console.error("Failed to load model:", err);
+                alert("Error: Could not load the AI model. Please refresh the page.");
+            }
+        }
+        loadModel();
+
+        imageUpload.addEventListener('change', (event) => {
+            const file = event.target.files[0];
+            if (!file) return;
+
+            successMessage.classList.add('hidden');
+            detailsSection.classList.add('hidden');
+            categoryResult.classList.add('hidden');
+            
+            const reader = new FileReader();
+            reader.onload = (e) => {
+                imagePreview.src = e.target.result;
+                analysisSection.classList.remove('hidden');
+                reportData.image = e.target.result;
+
+                classifyImage(imagePreview);
+            };
+            reader.readAsDataURL(file);
+        });
+
+        async function classifyImage(imgElement) {
+            if (!model) {
+                alert("Model is not loaded yet. Please wait a moment and try again.");
+                return;
+            }
+
+            loader.classList.remove('hidden'); 
+            
+            try {
+                const predictions = await model.classify(imgElement);
+                console.log('Predictions:', predictions);
+
+                const topPrediction = predictions[0];
+                const aiCategory = topPrediction.className.toLowerCase();
+                const confidence = (topPrediction.probability * 100).toFixed(1);
+
+                reportData.category = mapPredictionToCategory(aiCategory);
+                
+                categoryLabel.innerText = `${reportData.category} (Confidence: ${confidence}%)`;
+                categoryResult.classList.remove('hidden');
+
+            } catch (err) {
+                console.error("Error classifying image:", err);
+                categoryLabel.innerText = "Error analyzing image.";
+            } finally {
+                loader.classList.add('hidden'); 
+                detailsSection.classList.remove('hidden'); 
+            }
+        }
+
+        function mapPredictionToCategory(predictionClass) {
+            if (predictionClass.includes('faucet') || predictionClass.includes('sink') || predictionClass.includes('toilet') || predictionClass.includes('plunger')) {
+                return 'Plumbing';
+            }
+            if (predictionClass.includes('chair') || predictionClass.includes('desk') || predictionClass.includes('bench') || predictionClass.includes('table')) {
+                return 'Furniture';
+            }
+            if (predictionClass.includes('trash') || predictionClass.includes('garbage') || predictionClass.includes('waste bin') || predictionClass.includes('broom')) {
+                return 'Housekeeping';
+            }
+            if (predictionClass.includes('light') || predictionClass.includes('lamp') || predictionClass.s('switch') || predictionClass.includes('outlet')) {
+                return 'Electrical';
+            }
+            if (predictionClass.includes('window') || predictionClass.includes('door')) {
+                return 'Structural';
+            }
+            return 'General / Other'; 
+        }
+
+        locationBtn.addEventListener('click', () => {
+            if (!navigator.geolocation) {
+                locationText.innerText = 'Geolocation is not supported by your browser.';
+                return;
+            }
+
+            locationText.innerText = 'Getting location...';
+            
+            navigator.geolocation.getCurrentPosition(
+                (position) => {
+                    const lat = position.coords.latitude.toFixed(5);
+                    const lon = position.coords.longitude.toFixed(5);
+                    reportData.location = { latitude: lat, longitude: lon };
+                    locationText.innerText = `Location Captured (Lat: ${lat}, Lng: ${lon})`;
+                    locationBtn.classList.add('bg-green-200', 'text-green-800');
+                },
+                (error) => {
+                    console.error("Error getting location:", error);
+                    locationText.innerText = 'Could not get location. Please enable permissions.';
+                }
+            );
+        });
+
+        submitBtn.addEventListener('click', () => {
+            reportData.description = document.getElementById('description').value;
+
+            console.log("Final Report Submitted:", JSON.stringify(reportData, null, 2));
+
+            analysisSection.classList.add('hidden');
+            detailsSection.classList.add('hidden');
+            uploadSection.classList.add('hidden'); 
+            successMessage.classList.remove('hidden');
+
+            imageUpload.value = null; 
+            setTimeout(() => {
+                uploadSection.classList.remove('hidden');
+                successMessage.classList.add('hidden');
+                description.value = '';
+                locationText.innerText = 'Please share your location for the report.';
+                locationBtn.classList.remove('bg-green-200', 'text-green-800');
+            }, 5000); 
+        });
+    </script>
+</body>
+</html>
