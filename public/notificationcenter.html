@@ -1,152 +1,176 @@
 <!DOCTYPE html>
 <html lang="en">
 <head>
-    <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
     <title>Notification Center</title>
     <script src="https://cdn.tailwindcss.com"></script>
+
     <link rel="preconnect" href="https://fonts.googleapis.com">
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
     <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
+
     <style>
-        body {
-            font-family: 'Inter', sans-serif;
-        }
+        body { font-family: 'Inter', sans-serif; }
         .unread-dot::after {
             content: '';
             position: absolute;
             top: 50%;
-            right: 1.25rem; 
+            right: 1.25rem;
             transform: translateY(-50%);
             width: 8px;
             height: 8px;
-            background-color: #3b82f6; 
+            background-color: #3b82f6;
             border-radius: 50%;
         }
     </style>
 </head>
-<body class="bg-#0B0E1A flex items-center justify-center min-h-screen p-4">
+
+<body class="bg-[#0B0E1A] flex items-center justify-center min-h-screen p-4">
 
     <div id="notification-box" class="w-full max-w-[200vh] bg-white dark:bg-slate-800 rounded-2xl shadow-2xl border dark:border-slate-700">
+
         <div class="p-4 border-b dark:border-slate-700 flex justify-between items-center">
             <h3 class="text-lg font-semibold text-gray-800 dark:text-white">Notifications</h3>
-            <button id="mark-all-read" class="text-sm text-indigo-600 dark:text-indigo-400 hover:underline focus:outline-none">Mark all as read</button>
+            <button id="mark-all-read" class="text-sm text-indigo-600 dark:text-indigo-400 hover:underline">
+                Mark all as read
+            </button>
         </div>
-        <div id="notification-list" class="max-h-[60vh] overflow-y-auto">
-        </div>
-         <div id="empty-state" class="hidden text-center p-8">
-            <svg class="mx-auto h-12 w-12 text-gray-400" fill="none" viewBox="0 0 24 24" stroke="currentColor" aria-hidden="true">
-                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z" />
+
+        <div id="notification-list" class="max-h-[60vh] overflow-y-auto"></div>
+
+        <div id="empty-state" class="hidden text-center p-8">
+            <svg class="mx-auto h-12 w-12 text-gray-400" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
+                    d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z" />
             </svg>
             <h3 class="mt-2 text-sm font-medium text-gray-900 dark:text-white">All caught up!</h3>
             <p class="mt-1 text-sm text-gray-500 dark:text-gray-400">You don't have any new notifications.</p>
         </div>
     </div>
 
-    <script>
-        let notificationsData = [
-            { id: 1, icon: '📢', title: 'Follow the college Dress code and wearing of uniform is compulsory - Principal', timestamp: new Date('2025-10-14T18:00:00'), read: true, link: '#', category: 'This Week' },
-            { id: 2, icon: '🎉', title: 'The colloseum is Announced !', timestamp: new Date('2025-10-16T20:28:00'), read: false, link: '#', category: 'New' },
-            { id: 3, icon: '🗳️', title: 'A new poll is live: "Whom to invite for colloseum?"', timestamp: new Date('2025-10-16T19:00:00'), read: false, link: '#', category: 'New' },
-            { id: 4, icon: '📢', title: 'Reminder: exam fees are due next week.', timestamp: new Date('2025-10-16T15:30:00'), read: false, link: '#', category: 'Earlier Today' },
-            { id: 5, icon: '⚽', title: 'The inter-department football match has been rescheduled to Friday.', timestamp: new Date('2025-10-15T11:00:00'), read: true, link: '#', category: 'Yesterday' },
-            { id: 6, icon: '📚', title: 'Your reserved book "Data Structures and Algorithms" is now available in the library.', timestamp: new Date('2025-10-14T18:00:00'), read: true, link: '#', category: 'This Week' },
-        ];
+    <!-- FIREBASE LOGIC -->
+    <script type="module">
+        import { initializeApp } from "https://www.gstatic.com/firebasejs/10.8.0/firebase-app.js";
+        import {
+            getFirestore, collection, query, orderBy, onSnapshot,
+            updateDoc, doc, getDocs
+        } from "https://www.gstatic.com/firebasejs/10.8.0/firebase-firestore.js";
 
-        const notificationList = document.getElementById('notification-list');
-        const emptyState = document.getElementById('empty-state');
-        const markAllReadBtn = document.getElementById('mark-all-read');
+        // ✅ FIXED FIREBASE CONFIG
+        const firebaseConfig = {
+            apiKey: "AIzaSyASIMDC4BTP_Jpgn8OrI11G7mWh15t85pY",
+            authDomain: "amc-campus-connect.firebaseapp.com",
+            projectId: "amc-campus-connect",
+            storageBucket: "amc-campus-connect.appspot.com",
+            messagingSenderId: "1064061156328",
+            appId: "1:1064061156328:web:f6e6f87a9e5e9249bf825d",
+            databaseURL: "https://amc-campus-connect.firebaseio.com"
+        };
 
-        function formatTimeAgo(date) {
-            const now = new Date();
-            const seconds = Math.floor((now - date) / 1000);
-            let interval = seconds / 31536000;
-            if (interval > 1) return Math.floor(interval) + " years ago";
-            interval = seconds / 2592000;
-            if (interval > 1) return Math.floor(interval) + " months ago";
-            interval = seconds / 86400;
-            if (interval > 1) return Math.floor(interval) + " days ago";
-            interval = seconds / 3600;
-            if (interval > 1) return Math.floor(interval) + " hours ago";
-            interval = seconds / 60;
-            if (interval > 1) return Math.floor(interval) + " minutes ago";
+        const app = initializeApp(firebaseConfig);
+        const db = getFirestore(app);
+
+        // ✅ CORRECT APP ID (MUST MATCH FIRESTORE)
+        const appId = "default-app-id";
+
+        const notificationList = document.getElementById("notification-list");
+        const emptyState = document.getElementById("empty-state");
+        const markAllReadBtn = document.getElementById("mark-all-read");
+
+        function timeAgo(timestamp) {
+            const now = Date.now();
+            const seconds = Math.floor((now - timestamp) / 1000);
+
+            const intervals = [
+                { label: "year", secs: 31536000 },
+                { label: "month", secs: 2592000 },
+                { label: "day", secs: 86400 },
+                { label: "hour", secs: 3600 },
+                { label: "minute", secs: 60 }
+            ];
+
+            for (const i of intervals) {
+                const c = Math.floor(seconds / i.secs);
+                if (c >= 1) return `${c} ${i.label}${c > 1 ? "s" : ""} ago`;
+            }
             return "Just now";
         }
 
-        function renderNotifications() {
-            notificationList.innerHTML = '';
-            let currentCategory = '';
+        // 🔥 REAL-TIME LISTENER
+        const q = query(
+            collection(db, "artifacts", appId, "public", "data", "notifications"),
+            orderBy("timestamp", "desc")
+        );
 
-            if (notificationsData.length === 0 || notificationsData.every(n => n.read)) {
-                emptyState.classList.remove('hidden');
-                notificationList.classList.add('hidden');
-                return;
-            }
-            
-            emptyState.classList.add('hidden');
-            notificationList.classList.remove('hidden');
-
-            notificationsData.forEach(notif => {
-                if (notif.category !== currentCategory) {
-                    currentCategory = notif.category;
-                    const categoryHeader = document.createElement('h4');
-                    categoryHeader.className = 'px-4 py-2 text-sm font-semibold text-gray-500 dark:text-gray-400 bg-gray-50 dark:bg-slate-700/50';
-                    categoryHeader.textContent = currentCategory;
-                    notificationList.appendChild(categoryHeader);
-                }
-                
-                const notifLink = document.createElement('a');
-                notifLink.href = notif.link;
-                notifLink.className = `flex items-start p-4 hover:bg-gray-50 dark:hover:bg-slate-700 relative ${!notif.read ? 'unread-dot' : ''}`;
-                notifLink.dataset.id = notif.id;
-
-                const iconDiv = document.createElement('div');
-                iconDiv.className = 'flex-shrink-0 h-10 w-10 rounded-full bg-gray-200 dark:bg-slate-600 flex items-center justify-center text-xl';
-                iconDiv.textContent = notif.icon;
-
-                const textDiv = document.createElement('div');
-                textDiv.className = 'ml-3 w-0 flex-1';
-                
-                const titleP = document.createElement('p');
-                titleP.className = 'text-sm font-medium text-gray-900 dark:text-white';
-                titleP.textContent = notif.title;
-                
-                const timeP = document.createElement('p');
-                timeP.className = 'mt-1 text-sm text-gray-500 dark:text-gray-400';
-                timeP.textContent = formatTimeAgo(notif.timestamp);
-
-                textDiv.appendChild(titleP);
-                textDiv.appendChild(timeP);
-                notifLink.appendChild(iconDiv);
-                notifLink.appendChild(textDiv);
-
-                notificationList.appendChild(notifLink);
-            });
-        }
-        
-        function markAllAsRead() {
-            notificationsData.forEach(notif => notif.read = true);
-            renderNotifications();
-        }
-
-        markAllReadBtn.addEventListener('click', markAllAsRead);
-        
-        notificationList.addEventListener('click', (e) => {
-            const notifElement = e.target.closest('a');
-            if (notifElement) {
-                e.preventDefault(); 
-                const notifId = parseInt(notifElement.dataset.id);
-                const notification = notificationsData.find(n => n.id === notifId);
-                if (notification && !notification.read) {
-                    notification.read = true;
-                    notifElement.classList.remove('unread-dot');
-                    renderNotifications(); 
-                }
-            }
+        onSnapshot(q, snapshot => {
+            const notifications = snapshot.docs.map(d => ({
+                id: d.id,
+                ...d.data()
+            }));
+            renderNotifications(notifications);
         });
 
-        document.addEventListener('DOMContentLoaded', renderNotifications);
+        function renderNotifications(notifs) {
+            notificationList.innerHTML = "";
 
+            if (notifs.length === 0) {
+                emptyState.classList.remove("hidden");
+                notificationList.classList.add("hidden");
+                return;
+            }
+
+            emptyState.classList.add("hidden");
+            notificationList.classList.remove("hidden");
+
+            let currentCategory = "";
+
+            notifs.forEach(n => {
+                if (n.category !== currentCategory) {
+                    currentCategory = n.category;
+
+                    const header = document.createElement("h4");
+                    header.className =
+                        "px-4 py-2 text-sm font-semibold text-gray-500 dark:text-gray-400 bg-gray-50 dark:bg-slate-700/50";
+                    header.textContent = currentCategory;
+
+                    notificationList.appendChild(header);
+                }
+
+                const item = document.createElement("a");
+                item.href = n.link || "#";
+                item.className = `flex items-start p-4 hover:bg-gray-50 dark:hover:bg-slate-700 relative 
+                    ${n.read === false ? "unread-dot" : ""}`;
+                item.dataset.id = n.id;
+
+                item.innerHTML = `
+                    <div class="flex-shrink-0 h-10 w-10 rounded-full bg-gray-200 dark:bg-slate-600 flex items-center justify-center text-xl">
+                        ${n.icon || "🔔"}
+                    </div>
+                    <div class="ml-3 w-0 flex-1">
+                        <p class="text-sm font-medium text-gray-900 dark:text-white">${n.title}</p>
+                        <p class="mt-1 text-sm text-gray-500 dark:text-gray-400">${timeAgo(n.timestamp)}</p>
+                    </div>
+                `;
+
+                notificationList.appendChild(item);
+            });
+        }
+
+        // 🔥 MARK ALL AS READ
+        markAllReadBtn.addEventListener("click", async () => {
+            const snap = await getDocs(
+                collection(db, "artifacts", appId, "public", "data", "notifications")
+            );
+
+            snap.forEach(async docSnap => {
+                await updateDoc(
+                    doc(db, "artifacts", appId, "public", "data", "notifications", docSnap.id),
+                    { read: true }
+                );
+            });
+        });
     </script>
+
 </body>
 </html>

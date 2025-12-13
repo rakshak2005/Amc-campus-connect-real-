@@ -1,6 +1,6 @@
 import { Unbounded } from "next/font/google";
 import "./globals.css";
-
+export const dynamic = "force-static";
 const unbounded = Unbounded({
   variable: "--font-geist-sans",
   subsets: ["latin"],

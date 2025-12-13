@@ -2,6 +2,7 @@ import { Asset } from "next/font/google";
 import Image from "next/image";
 import AmcLogo from "../assests/amc-logo.png";
 import Amcblue from "../assests/AMC ENGG BLUE.png";
+import Link from "next/link";
 
 export default function Home() {
   return (
@@ -20,7 +21,7 @@ export default function Home() {
           </ul>
 
           <div className="nav-buttons">
-            <button className="btn-outline">Log In</button>
+           <Link href="/admin"><button className="btn-outline">Log In</button></Link> 
             <a className="btn-primary" href="/botpage.html">
               Try Now
             </a>
